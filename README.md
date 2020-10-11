@@ -1,179 +1,127 @@
 # Visonic Alarm Panel for Home Assistant
-Custom Component for integration with Home Assistant
 
-# Introduction
-Visonic produce the Powermax alarm panel series (PowerMax, PowerMax+, PowerMaxExpress, PowerMaxPro and PowerMaxComplete) and the Powermaster alarm series (PowerMaster 10 and PowerMaster 30). This binding allows you to control the alarm panel (arm/disarm) and allows you to use the Visonic sensors (movement, door contact, ...) within Home Assistant.
+A Custom Integration for Home Assistant
 
+## Introduction
+Visonic produce the Powermax and Powermaster alarm panel series including (PowerMax+, PowerMaxExpress, PowerMaxPro and PowerMaxComplete, PowerMaster 10 and PowerMaster 30).
 
-# What hardware will you need?
-You have a choice, you either connect using RS232/USB or using Ethernet (Wired or Wireless)
+This Home Assistant Integration allows you to control the alarm panel (arm/disarm) and allows you to use the Visonic sensors and events (movement, door contact, ...) and X10 devices within Home Assistant.
 
+Please note that after extensive work, the original PowerMax Panel is not able to be used as it does not support the Powerlink protocol that this component relies on. 
 
-If you choose USB then the PowerMax provides direct support for an RS232 serial interface that can be connected to the machine running Home Assistant. The serial interface is not installed by default but can be ordered from any PowerMax vendor (called the Visonic RS-232 Adaptor Kit). The RS232 internal panel interface uses TTL signal levels, this adaptor kit makes it "proper" TTL signal levels.  You may not need the Adaptor Kit if you use a USB interface with TTL RS232 logic levels.
+Also the Visonic 360R Alarm Panel is not fitted with an RS232 connection and cannot have a Powerlink3 fitted, it is therefore not compatible with this HA Component.
 
+## Wiki
+Remember to check out our Wiki-section, this contains all the documentation.
 
-If you choose Ethernet then I can help a bit more as that is what I have. I have a device that connects to the RS232 TTL interface inside the panel (without using the RS-232 Adapter Kit) and creates an Ethernet TCP connection with a web server to set it up. I bought [this](https://www.aliexpress.com/item/USR-TCP232-E-Serial-Server-RS232-RS485-To-Ethernet-TTL-Level-DHCP-Web-Module/32687581169.html)
+- [Wiki Home](https://github.com/davesmeghead/visonic/wiki)
 
-There is a newer version out called a USR-TCP232-E2
-
-There is a wifi version available like [this](https://www.amazon.co.uk/USR-WIFI232-D2-Module-Ethernet-802-11/dp/B00R2J3O1Y) that's a bit more expensive but essentially it's the same. Although you will need to also buy an aerial for it remember!
-
-You do not need to buy anything else apart from 4 wires. You connect it in to your Visonic alarm panel like [this](https://www.domoticaforum.eu/viewtopic.php?f=68&t=7152)
-
-I connected the 3.75v pin on the panel to the Vcc (3.3v) on this device, gnd to gnd and Tx to Rx, Rx to Tx. 4 wires and that's it.
-
-This allows you to connect your alarm panel to your ethernet home network. There is a webserver running on this and you need to set it up for TCP in STA (station) mode as transparent. The RS232 side is 9600 baud, disable control flow i.e CTS/RTS, no parity and 1 stop bit. In the HA configuration file you set the ip address and port for this device.
-
-Visonic does not provide a specification of the RS232 protocol and, thus, the binding uses the available protocol specification given at the ​domoticaforum. The binding implementation of this protocol is largely inspired by the Vera and OpenHab plugins.
+_If you have notes related to a specific solution where this component is used, you're mostly welcome to provide both details and full guides to the Wiki-section!_
 
 
 ## Release
-This is Alpha release 0.0.6
+This Component is compliant with the new Component format within the Home Assistant structure.
 
-Please be gentle with me, this is my first HA adventure
-
-0.0.2: Made some bug fixes
-
-0.0.3: Removed some test code that would prevent arming. Commented out phone number decoding as creating exceptions
-
-0.0.4: Added arm_without_usercode. Include phone number decode with an exception handler just in case
-
-0.0.5: Updated the state return values for the generic alarm panel for entry delay (as pending)
-
-0.0.6: Extracts much more info from EPROM in powerlink. Added more Dutch translations. Handle Access Denied (when entering wrong pin code). A few bug fixes.
-
-
-## Instructions and what works so far
-It currently connects to the panel in Powerlink and it creates an HA:
-- Sensor for each alarm sensor.
-- Switch so you can look at the internal state values, the switch itself doesn't do anything.
-- "alarm_control_panel" badge so you can arm and disarm the alarm.
-
-You do not need to use the Master Installer Code. To connect in Powerlink mode, the plugin uses a special Powerlink Code.
-
-
-### The configuration.yaml file
-This is an example from my configuration.yaml file (with values such as host and port changed):
-```
-visonic:
-  device:
-    type: ethernet
-    host: '192.168.1.128'
-    port: 10628
-  motion_off: 120
-  language: 'EN'
-  force_standard: 'no'
-  sync_time: 'yes'
-  allow_remote_arm: 'yes'
-  allow_remote_disarm: 'yes'
-#  override_code: '1234'
-#  arm_without_usercode: 'yes'
-```
-
-You can also have a USB (for RS232) connection:
-```
-  device:
-    type: usb
-    path: '/dev/ttyUSB1'
-```
-
-
-It tries to connect in Powerlink mode by default (unless you set force_standard to 'yes').
-
-- 'motion_off' (default 180) is in seconds, it is the time to keep the zone trigger True after it is triggered. There will not be another trigger for that sensor within this time period.
-- 'language' (default 'EN') can be either EN for English or NL for Dutch
-- 'force_standard' (default 'no') determine whether it tries to connect in Powerlink mode or just goes to Standard
-- 'sync_time' (default 'yes') attempts to synchronise the time between the device you run HA on and the alarm panel
-- 'allow_remote_arm' (default 'no') determines whether the panel can be armed from within HA
-- 'allow_remote_disarm' (default 'no') determines whether the panel can be disarmed from within HA
-- 'override_code' (default '') If in Powerlink mode then this is not used. If in Standard mode, then this is the 4 digit code used to arm and disarm. If in Standard mode and the override_code is not set then you will have to enter your 4 digit code every time you arm and disarm. It depends on how secure you make your system and how much you trust it!
-- 'arm_without_usercode' (default 'no') This is only used when in Standard mode. Some panels will arm without entering the 4 digit user code but some will not. So if your panel does not need a user code to arm then set this to 'yes' in your HA configuration files
-
-
-### Running it in Home Assistant
-Put the files in your custom_components directory that is within your HA config directory. 
-I have included the python library REQUIREMENTS in visonic.py but in case that doesn't work you would need to install some python libraries yourself:
-```
-sudo pip3 install pyserial
-sudo pip3 install python-datetime
-sudo pip3 install pyserial_asyncio
-```
-
-You can force it in to Standard mode.
-If the plugin connects in Powerlink mode then it automatically gets the user codes from the panel to arm and disarm.
-If the plugin connects in Standard mode then you must provide the user code to arm and disarm. You can either use 'override_code' in the HA configuration or manually enter it each time. Some panels allow arming without the user code. If the mode stays at Download for more than 5 minutes then something has gone wrong.
-
-
-### How to use it in Home Assistant Automations
-```
-- alias: Alarm Armed So Turn Lights Off
-  initial_state: 'on'
-  trigger:
-  - platform: state
-    entity_id: alarm_control_panel.visonic_alarm
-    to: armed_away
-  action:
-  - service: script.alarm_armed
-
-- alias: Alarm Disarmed So Email Me
-  initial_state: 'on'
-  trigger:
-  - platform: state
-    entity_id: alarm_control_panel.visonic_alarm
-    to: disarmed
-  action:
-  - service: script.alarm_disarmed_email
-```
-Of course you'll have to write your own scripts!
-
-
-## Notes
-- You need to specify either a USB(RS232) connection or an Ethernet(TCP) connection as the device type, this setting is mandatory. 
-- For Powerlink mode to work the enrollment procedure has to be followed. If you don't enroll the Powerlink on the PowerMax the binding will operate in Standard mode. On the newer software versions of the PowerMax the Powerlink enrollment is automatic, and the binding should only operate in 'Powerlink' mode (if enrollment is successful). It will attempt to connect in Powerlink mode 3 times before giving up and going to Standard mode. The 2 advantages of Powerlink mode are that it shows you detailed information about the panel and you do not have to enter your user code to arm and disarm the panel.
-- You can force the binding to use the Standard mode. In this mode, the binding will not download the alarm panel setup and so the binding will not know your user code.
-- An HA Event 'alarm_panel_state_update' (that you will probably never use) is sent through HA for:
-    - 1 is a zone update, 2 is a panel update, 3 is a panel update AND the alarm is active!!!!!
-    - The data associated with the event is { 'condition': X }   where X is 1, 2 or 3
-    - I may add more information to the event later if required
-- You should be able to stop and start your HA. Once you manage to get it in to Powerlink mode then it should keep working through restarting HA, this is because the powerlink code has successfully registered with the panel.
-
-
-## What it doesn't do in Home Assistant
-- Partitions, it assumes a single partition
-- What happens when the alarm is actually triggered (apart from sending an event in HA and setting the Alarm Status state)
-- The compatibility of the binding with the Powermaster alarm panel series is probably only partial.
-- The USB connection is implemented but was not tested.
-- You cannot bypass / arm individual sensors using the HA interface
-- The Event Log is not yet implemented. It works but I don't know what to do with it in HA.
-
-
-## Troubleshooting
-OK, so you've got it partially working but it's not quite there.... what can you do.
-
-The first thing to say is that it's a PITA to get it in to Powerlink mode from within HA. I believe the problem is to do with timing issues and the way HA works with asyncio. If I use my python (pyvisonic.py) with a test program from a command line it works every time. When I put it in to HA it works some of the time and I just keep trying until it goes in to Powerlink mode. Is this ideal, No.  Do I have a choice, No.  From experience, if the panel isn't doing what you think it should then leave it alone for a few hours. I believe, although I am not sure, that it has some kind of antitamper in the software for the RS232 interface and it stops allowing Powerlink connectivity.
-
-- I try to get it in to Powerlink mode but it only goes in to Standard mode
-  - Check that force_standard is set to 'no'
-  - If you have had anything connected to the panel in the past that has been in Powerlink mode then Do a Full Restart (see below what I mean *).
-  - The plugin will try 3 times to get in to powerlink mode but then gives up and goes in to Standard mode. If this happens and you want powerlink mode then Do a Full Restart Sequence as defined below. If this doesn't work then leave it for a few hours and try again.
-  
-- I try to get it in to Powerlink mode but it only goes in to Download mode
-  - Has it been like this for less than 5 minutes, then wait as it can take a long time
-  - So it's more than 5 minutes, OK. Do a Full Restart Sequence as defined below.
-  - If there are still problems then set your logger to output debug data to the log file for the visonic components and send it to me. Something like this:
-
-```
-logger:
-  default: critical
-  logs:
-    custom_components.visonic: debug
-    custom_components.alarm_control_panel.visonic: critical
-    custom_components.sensor.visonic: critical
-    custom_components.pyvisonic: debug
-```
-
-(*) Full Restart Sequence for Powerlink:
-- Stop HA
-- Restart the panel: Restart your Visonic panel by going in to and out of installer mode. Do not do any panel resets, the act of exiting installer mode is enough. 
-- Wait for a couple of minutes for the panel to restart
-- Start HA.
+|  Release   |    Description   |
+|------------|------------------|
+| 0.5.0.1    | HACS Release and minor bug fix |
+| 0.5.0.0    | Used the preferred home assistant code formatter, so all code files modified. No functional changes, a few bug fixes |
+| 0.4.4.4    | Bug fix for the combination of Arm Without Code and panel Disarmed when in Powerlink or Standard Plus. |
+| 0.4.4.3    | Specific update for misreporting of PIR sensors on PowerMax Pro model 62. |
+| 0.4.4.2    | Updated test.py to reflect changes to the callback. |
+| 0.4.4.1    | Fixed a bug in the reporting of PanelReady in the HA Event. |
+| 0.4.4.0    | Circumvent an HA bug that prevents a config parameter being set back to an empty string. Release for HACS. |
+| 0.4.3.0    | A few bug fixes and a change for the new HA version 0.110. Also added conversion for config setting boolean imports. Release for HACS. |
+| 0.4.2.0    | Restructure the panel data decoding in to PDUs. Release for HACS. Fix B0 Message decode bug. |
+| 0.4.1.0    | Restructure the panel data decoding in to PDUs. Release for HACS. |
+| 0.4.0.9    | A bit more tidying up for variable message decoding. |
+| 0.4.0.8    | Modified decoding of B0 message data and then made the other variable message decoding the same. |
+| 0.4.0.7    | Bug fix for exclude_x10 and exclude_sensor when the lists are empty |
+| 0.4.0.6    | Bug fix for ability to create the integration from within Home Assistant |
+| 0.4.0.5    | Bug fix for USB connections |
+| 0.4.0.4    | Bug fix for ability to create/edit the integration from within Home Assistant. Breaking change if you use exclude_x10 and/or exclude_sensor  |
+| 0.4.0.3    | Bug fix for USB connections |
+| 0.4.0.2    | Bug fix for USB connections |
+| 0.4.0.1    | Bug fix for USB connections |
+| 0.4.0.0    | Added the ability to create/edit the integration from within Home Assistant. Major change but hopefully not a breaking change. |
+| 0.3.7.0    | Several changes to HA event generation, I have updated the wiki so please read it. There are 2 new config settings arm_away_instant and arm_home_instant, 2 new HA Services alarm_panel_command and alarm_panel_download. |
+| 0.3.6.3    | Changed Ready to PanelReady  |
+| 0.3.6.2    | Updated the new HA Event as condition 11 and added new with condition 12. "Ready" has been added which copies the received "Panel Ready" attribute. A "message" is also added. Either an 11 or 12 HA event is generated.  |
+| 0.3.6.1    | Added new config entry called "siren_sounding" as a list of strings. Added new HA Event as condition 11, triggered when the user tries to arm/diasrm the panel (but before the command is sent to the panel) |
+| 0.3.6.0    | Added an additional attribute called "Panel Last Event Data" to the panel entity, this is a complex record of the A7 message (the panel state) |
+| 0.3.5.8    | Panel type Powermax+ (panel model 1) and Powermax Pro (panel model 2) need to manually enroll.  Code updated to reflect this and added new readme section about panel types. Moved most of the info to the wiki. |
+| 0.3.5.7    | Experiment for Panel Model 2 (Powermax Pro) to miss out the Enroll command. |
+| 0.3.5.6    | Alarm Panel Siren handling updated.  Detect when no data received from panel from the start up to 30 seconds then something wrong.  No change to B0 Experimental message processing. |
+| 0.3.5.5    | Alarm Panel Siren handling updated.  Bug fix to remove wait_for warnings.  No change to B0 Experimental message processing. |
+| 0.3.5.4    | Added new config parameter "force_autoenroll". This is a breaking change for Powermax+ users, they need to set this to 'No' in their configuration file. "force_autoenroll" is only used when the panel rejects an EPROM download request and we do not know the panel type. No change to B0 Experimental message processing. |
+| 0.3.5.3    | As per 0.3.5.2. Updated Release of Panel Event Log Processing. Minor Functional Change (battery status). No change to B0 Experimental message processing. |
+| 0.3.5.2    | Updated Release of Panel Event Log Processing. Minor Functional Change. No change to B0 Experimental message processing. |
+| 0.3.5.1    | Updated Release of Panel Event Log Processing. No change to B0 Experimental message processing. |
+| 0.3.5      | First Release of Panel Event Log Processing. Several configuration.yaml parameters added, a new service to call to start it and several new HA events can be generated. No change to B0 Experimental message processing. |
+| 0.3.4.15   | Updated Panel Event Log Processing. No change to B0 Experimental message processing. |
+| 0.3.4.14   | Changed the Im alive and status message exchange when in standard, standard plus and powerlink modes. No change to B0 Experimental message processing. |
+| 0.3.4.13   | Updated event and zone information in the panel attributes (Panel Last Event) for PowerMaster panels (a lot more zones and event types). No change to B0 Experimental message processing. |
+| 0.3.4.12   | Bug fix in 0.3.4.11 B0 Experimental message processing. |
+| 0.3.4.11   | No change to B0 Experimental message processing. Updated timeout sequence. If in download then go to Standard Mode and retry Download in 90 seconds. Shortened download timeouts as they are generally much faster now. |
+| 0.3.4.10   | Tidied up the new service call operation. Updated B0 Experimental message processing. |
+| 0.3.4.9    | Added more test code to better connect Powermax+ and understand whats going on. Altered the new service call operation to be compatible with the disconnect procedure. |
+| 0.3.4.8    | Added more test code to better connect Powermax+ and understand whats going on. Realised that 0.3.4.7 had a problem so it's fixed |
+| 0.3.4.7    | Added more test code to better connect Powermax+ and understand whats going on. Added a send of MSG_RESTORE to the panel when achieved Standard Plus. |
+| 0.3.4.6    | When using Ethernet to connect to the panel, I have added the socket options to keep the connection alive with a long timeout. Added code to flush the receive buffer. |
+| 0.3.4.5    | When using Ethernet to connect to the panel, I have added the socket options to keep the connection alive with a long timeout. |
+| 0.3.4.4    | As per 0.3.4. Added more and more test code to better connect Powermax+ and understand whats going on. |
+| 0.3.4.3    | As per 0.3.4. Added more test code to better connect Powermax+ and understand whats going on. Updated new service call code to keep alarm panel in frontend. |
+| 0.3.4.2    | As per 0.3.4. Added further test code to better connect Powermax+ and understand whats going on. |
+| 0.3.4.1    | As per 0.3.4. Added service to close and reconnect to the panel, it is visonic.alarm_panel_reconnect with no parameters. Added test code to better connect Powermax+ and understand whats going on. |
+| 0.3.4      | Added PowerMaster shock sensor (as device type vibration). PowerMaster Experimental function retained. Note that the original Powermax is not supported as it doesn not provide the powerlink protocol. |
+| 0.3.3.10   | Updated to include decode of message 0x22 in the same way as an 0x3C. This is for the older powermax users. More tries! |
+| 0.3.3.9    | Updated to include decode of message 0x22 in the same way as an 0x3C. This is for the older powermax users. Next Next Next try! |
+| 0.3.3.8    | Updated to include decode of message 0x22 in the same way as an 0x3C. This is for the older powermax users. Next Next try! |
+| 0.3.3.7    | Updated to include decode of message 0x22 in the same way as an 0x3C. This is for the older powermax users. Next try! |
+| 0.3.3.6    | Updated to include decode of message 0x22 in the same way as an 0x3C. This is for the older powermax users. |
+| 0.3.3.5    | Updated to include flushing the input buffer prior to sending data and updated bridge to include COM to COM transfers. |
+| 0.3.3.4    | Updated for bug fix in A5 system status message decode. Experimental release from 0.3.3.1 kept in, feedback would be appreciated. |
+| 0.3.3.3    | Updated Powerlink operation: removed I'm Alive message and now sending periodic Restore. Experimental release from 0.3.3.1 kept in. Feedback on both of these would be appreciated. |
+| 0.3.3.2    | A minor feature added to stop doing powerlink attempts and to allow sending on panel timeouts. Experimental release from 0.3.3.1 kept in. Feedback on both of these would be appreciated. |
+| 0.3.3.1    | Experimental release to attempt to decode the A7 FF message for PowerMaster Series alarms. It still also includes the B0 experimental decode for sensors too. Feedback on both of these would be appreciated. |
+| 0.3.3      | Added a config parameter to almost always display the numeric keypad, including when the User code has been obtained from the EEPROM. Note that the B0 Experimental function is still in there too. |
+| 0.3.2.2    | Experimental release looking at the B0 PowerMaster messages, included some code to detect motion from the "B0 03 04" data. |
+| 0.3.2.1    | Experimental release looking at the B0 PowerMaster messages and whether we can use them to determine PIR motion without the alarm being armed. |
+| 0.3.2      | Reworked HA service to bypass/rearm individual sensors in the panel. There is no Frontend for this, just a service for you to call. |
+| 0.3.1      | Added HA service to bypass/rearm individual sensors in the panel. There is no Frontend for this, just a service for you to call. |
+| 0.3.0      | New Control Flow working for PowerMaster 10 and 30 and achieves powerlink much quicker. Also, courtesy of olijouve, a French language translation. Tidied up log entries. Trigger restore if expected not received in 10 seconds. |
+| 0.2.9      | Fixed a bug from when there are 20 or more of the same message, I caused a reset of the Component. I should only do this for A5 messages. |
+| 0.2.8      | Lots and lots of debug for Adding Sensors and X10. Removed debug logs for EPROM Download. |
+| 0.2.7      | Changes Download EPROM Technique, its much faster. Lots and lots of debug for Adding Sensors and EPROM download (but does not show pin codes) |
+| 0.2.6      | Some PowerMaster fixes for Downloading EPROM. Lots and lots of debug for EPROM download (but does not show pin codes) |
+| 0.2.5      | Process access denied messages from panel better. Lots and lots of debug for EPROM download (but does not show pin codes) |
+| 0.2.4      | Added HA access to watchdog and download timout counters. Process access denied messages from panel better. |
+| 0.2.3      | Minor updates for PowerMaster Panels, more debug logs for PowerMaster panels, no other changes. |
+| 0.2.2      | Minor updates for PowerMaster Panels, no other changes. |
+| 0.2.1      | X10 Devices available in Standard Plus and Powerlink. Added "zone tripped" attribute to the sensors. Assume siren is not active when panel disarmed. |
+| 0.2.0      | A change of control flow for startup and the addition of the "Standard Plus" mode. Also added the ability to set the Download Code from the configuration file |
+| 0.1.5      | A few debug and bug fix additions to hopefully help work out control flow of some of the wider communities panels |
+| 0.1.4      | Quick fix to Powerlink, would sometimes take 10 to 15 minutes so put some code back to how it was!! I have also added "exclude" lists for sensors and x10 devices, added additional config parameters, see below |
+| 0.1.3      | Quick fix to exit Download mode quicker when trying Powerlink |
+| 0.1.2      | Assume Powermaster as default panel and allow CRC to be 1 less than calculated value (I don't know why). Update operation when panel connection is lost. Move when Time is Synchronised to be more accurate (Powermax only). Update A7 decode as Powermaster 10 series sends unknown A7 data. Update powerlink timing to hopefully improve reliability. |
+| 0.1.1      | Not officially released |
+| 0.1.0      | *** Breaking change ***  I have converted the Component to the new HA Component file structure. This Component has a different file structure, please delete all previous files. |
+| 0.0.8.5    | Bug fix for the number format to be displayed on standard mode |
+| 0.0.8.4    | Bug fix to the Bug fix for X10 Devices when in Standard Mode |
+| 0.0.8.3    | Bug fixes for X10 Devices when in Standard Mode |
+| 0.0.8.2    | Added Powermaster Sensor MC-302V PG2 and additional zone status decoding |
+| 0.0.8.1    | Updated for bugfix to A7 data decode using Powermaster 10 |
+| 0.0.8.0    | *** Breaking change ***  X10 devices added, they should be created as a switch. I've removed the old switch entity from previous versions and merged its attributes in to "alarm_control_panel.visonic_alarm". Within a sensor, zone tamper and device tamper are now different. Tamper no longer triggers the alarm sounding in HA, only the siren sounding does this now. |
+| 0.0.7.2    | HA 0.86 made a breaking change, alarm control panel entities must return "number" and not "Number". |
+| 0.0.7.1    | Updated device attributes for battery level, tripped state, armed state (bypassed or not) and last tripped time to all conform with similar settings within HA itself. |
+| 0.0.7.0    | *** Breaking change *** Conversion of all sensors from a sensor Entity to a binary_sensor Entity type. This means that a sensor can only have 2 states, off or on. The interpretation in the frontend depends on what is provided by device_class. I have done what I can to get the device class correct but you can change this in your customize configuration section, see below. Remember that the state is now off or on and not "-", "T" or "O". |
+| 0.0.6.6    | Bug fix to sensor device_class, part of HA Entity update. |
+| 0.0.6.5    | Sensors are based on the HA Entity. Moved "from serial_asyncio import create_serial_connection" to create_usb_visonic_connection so only used for USB connections. |
+| 0.0.6.4    | Removed push change in A3 message as causing exception in HA. |
+| 0.0.6.3    | Fix bug in SetConfig, prevent "None" values being accepted. |
+| 0.0.6.2    | Added code to indicate when alarm is triggered (and sounding). This works best in powerlink mode. In Standard mode I make a guess that when the panel is armed and a device is triggered then the alarm must be sounding. |
+| 0.0.6      | Extracts much more info from EPROM in powerlink. Added more Dutch translations. Handle Access Denied (when entering wrong pin code). A few bug fixes. |
+| 0.0.5      | Updated the state return values for the generic alarm panel for entry delay (as pending). |
+| 0.0.4      | Added arm_without_usercode. Include phone number decode with an exception handler just in case. |
+| 0.0.3      | Removed some test code that would prevent arming. Commented out phone number decoding as creating exceptions. |
+| 0.0.2      | Made some bug fixes |

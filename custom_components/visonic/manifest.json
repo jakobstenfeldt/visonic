@@ -1,0 +1,13 @@
+{
+  "domain": "visonic",
+  "name": "Visonic Intruder Alarm",
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/davesmeghead/visonic/wiki",
+  "codeowners": ["@davesmeghead"],
+  "requirements": ["pyserial", "pyserial_asyncio", "datetime", "jinja2"],
+  "ssdp": [],
+  "zeroconf": [],
+  "homekit": {},
+  "homeassistant": "0.112.0"
+}
